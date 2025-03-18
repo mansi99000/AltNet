@@ -8,6 +8,7 @@ import wandb
 import csv
 import os
 
+wandb.login()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", default="hopper-hop")
@@ -74,11 +75,14 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project="RDE+SAC", entity=args.entity_name,
+    wandb.init(project="RDE_SAC", 
                name=f"{mode}_{args.replay_ratio}_{args.seed}",
                group=f"{args.env}",
                job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}",
                reinit=True)
+    # wandb.init(project="RDE_SAC",
+    #            name=f"{mode}_{args.replay_ratio}_{args.seed}"
+    #            )
 
 model = SAC("MlpPolicy", env, verbose=1, policy_kwargs=policy_kwargs, reset=reset,
             reset_frequency=reset_freq, gradient_steps=args.replay_ratio,
