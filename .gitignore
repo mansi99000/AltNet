@@ -1,0 +1,27 @@
+# Ignore IDE and editor files
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.DS_Store
+
+# Ignore compiled and cache files
+*.so
+*.o
+*.a
+*.dylib
+*.dll
+*.exe
+
+# Ignore virtual environments
+venv/
+.env/
+.RDE_atari_dmc_3_16/
+
+# Ignore logs, temporary, and output files
+logs/
+*.log
+*.out
+*.aux
+*.pdf
