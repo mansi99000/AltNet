@@ -33,7 +33,7 @@ policy_kwargs = dict()
 
 if args.RDE:
     mode = 'RDE+SAC'
-    num_agent = 2
+    num_agent = 4
     reset = True
 elif args.SR:
     mode = 'SR+SAC'
@@ -74,12 +74,14 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
                              render=False, wandb=args.wandb)
 
 if args.wandb:
+    print("Seed is: ", args.seed)
     policy_kwargs.update(wandb=args.wandb)
     wandb.init(project="RDE_SAC", 
-               name=f"{mode}_{args.replay_ratio}_{args.seed}",
+               name=f"ge_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
                group=f"{args.env}",
                job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}",
                reinit=True)
+    wandb.log({"num_agents": num_agent})
     # wandb.init(project="RDE_SAC",
     #            name=f"{mode}_{args.replay_ratio}_{args.seed}"
     #            )
