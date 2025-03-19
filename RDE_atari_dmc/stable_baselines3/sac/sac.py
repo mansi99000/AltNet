@@ -141,7 +141,7 @@ class SAC(OffPolicyAlgorithm):
             supported_action_spaces=(gym.spaces.Box),
             support_multi_env=True,
         )
-
+        self.active_agents = 1
         self.target_entropy = target_entropy
         self.log_ent_coef = None  # type: Optional[th.Tensor]
         # Entropy coefficient / Entropy temperature
@@ -213,7 +213,8 @@ class SAC(OffPolicyAlgorithm):
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         optimizers = []
-        for i in range(self.num_agent):
+        # for i in range(self.num_agent):
+        for i in range(self.active_agents):
             optimizers.append(self.actor[i].optimizer)
             optimizers.append(self.critic[i].optimizer)
             optimizers.append(self.ent_coef_optimizer[i])
@@ -232,10 +233,12 @@ class SAC(OffPolicyAlgorithm):
 
             # We need to sample because `log_std` may have changed between two gradient steps
             if self.use_sde:
-                for i in range(self.num_agent):
+                # for i in range(self.num_agent):
+                for i in range(self.active_agents):
                     self.actor[i].reset_noise()
 
-            for i in range(self.num_agent):
+            # for i in range(self.num_agent):
+            for i in range(self.active_agents):
                 actions_pi, log_prob = self.actor[i].action_log_prob(replay_data.observations)
                 log_prob = log_prob.reshape(-1, 1)
 
@@ -278,7 +281,8 @@ class SAC(OffPolicyAlgorithm):
 
             # Update target networks
             if gradient_step % self.target_update_interval == 0:
-                for i in range(self.num_agent):
+                # for i in range(self.num_agent):
+                for i in range(self.active_agents):
                     polyak_update(self.critic[i].parameters(), self.critic_target[i].parameters(), self.tau)
                     # Copy running stats, see GH issue #996
                     polyak_update(self.batch_norm_stats[i], self.batch_norm_stats_target[i], 1.0)
@@ -290,27 +294,36 @@ class SAC(OffPolicyAlgorithm):
 
         if self.reset and self.num_timesteps % self.reset_frequency == 0:
 
-            actor_num = int(self.num_reset % self.num_agent)
+            if self.wandb:
+                wandb.log({"active_agents": self.active_agents}, step=self.num_timesteps)
 
-            self.policy.init_weights(self.actor[actor_num].latent_pi[0])
-            self.policy.init_weights(self.actor[actor_num].latent_pi[2])
-            self.policy.init_weights(self.actor[actor_num].mu)
+            if self.active_agents < self.num_agent:  # Ensure we don’t exceed the limit
+                self.active_agents += 1  # Add a new network
 
-            self.policy.init_weights(self.critic[actor_num].qf0[0])
-            self.policy.init_weights(self.critic[actor_num].qf0[2])
-            self.policy.init_weights(self.critic[actor_num].qf0[4])
+            # actor_num = int(self.num_reset % self.num_agent)
+            actor_num = self.active_agents - 1 # Select the newly activated network
 
-            self.policy.init_weights(self.critic_target[actor_num].qf0[0])
-            self.policy.init_weights(self.critic_target[actor_num].qf0[2])
-            self.policy.init_weights(self.critic_target[actor_num].qf0[4])
+            # do we need this? Becuase the netwrok was initialized in the begining and has not been trained until now?
 
-            self.policy.init_weights(self.critic[actor_num].qf1[0])
-            self.policy.init_weights(self.critic[actor_num].qf1[2])
-            self.policy.init_weights(self.critic[actor_num].qf1[4])
+            # self.policy.init_weights(self.actor[actor_num].latent_pi[0])
+            # self.policy.init_weights(self.actor[actor_num].latent_pi[2])
+            # self.policy.init_weights(self.actor[actor_num].mu)
 
-            self.policy.init_weights(self.critic_target[actor_num].qf1[0])
-            self.policy.init_weights(self.critic_target[actor_num].qf1[2])
-            self.policy.init_weights(self.critic_target[actor_num].qf1[4])
+            # self.policy.init_weights(self.critic[actor_num].qf0[0])
+            # self.policy.init_weights(self.critic[actor_num].qf0[2])
+            # self.policy.init_weights(self.critic[actor_num].qf0[4])
+
+            # self.policy.init_weights(self.critic_target[actor_num].qf0[0])
+            # self.policy.init_weights(self.critic_target[actor_num].qf0[2])
+            # self.policy.init_weights(self.critic_target[actor_num].qf0[4])
+
+            # self.policy.init_weights(self.critic[actor_num].qf1[0])
+            # self.policy.init_weights(self.critic[actor_num].qf1[2])
+            # self.policy.init_weights(self.critic[actor_num].qf1[4])
+
+            # self.policy.init_weights(self.critic_target[actor_num].qf1[0])
+            # self.policy.init_weights(self.critic_target[actor_num].qf1[2])
+            # self.policy.init_weights(self.critic_target[actor_num].qf1[4])
 
             self.log_ent_coef[actor_num] = th.log(th.ones(1, device=self.device)).requires_grad_(True)
             self.ent_coef_optimizer[actor_num] = th.optim.Adam([self.log_ent_coef[actor_num]], lr=self.lr_schedule(1))
@@ -325,14 +338,16 @@ class SAC(OffPolicyAlgorithm):
         self._n_updates += gradient_steps
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
-        for i in range(self.num_agent):
+        # for i in range(self.num_agent):
+        for i in range(self.active_agents):
             self.logger.record(f"train/ent_coef_{i + 1}", np.mean(ent_coefss, 0)[i])
             self.logger.record(f"train/actor_loss_{i + 1}", np.mean(actors_losses, 0)[i])
             self.logger.record(f"train/critic_loss_{i + 1}", np.mean(critics_losses, 0)[i])
             self.logger.record(f"train/ent_coef_loss_{i + 1}", np.mean(ent_coefs_losses, 0)[i])
 
         if self.wandb:
-            for i in range(self.num_agent):
+            # for i in range(self.num_agent):
+            for i in range(self.active_agents):
                 wandb.log({f"actor_loss{i + 1}": float(np.mean(actors_losses, 0)[i])}, step=self.num_timesteps)
                 wandb.log({f"critic_loss{i + 1}": float(np.mean(critics_losses, 0)[i])}, step=self.num_timesteps)
                 wandb.log({f"ent_coef_{i + 1}": float(np.mean(ent_coefss, 0)[i])}, step=self.num_timesteps)
