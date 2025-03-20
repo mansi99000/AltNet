@@ -295,7 +295,7 @@ class SAC(OffPolicyAlgorithm):
             actors_losses.append(actor_losses)
             critics_losses.append(critic_losses)
 
-        print(f"{self.num_timesteps % self.reset_frequency}")
+        # print(f"{self.num_timesteps % self.reset_frequency}")
         if self.reset and self.num_timesteps % self.reset_frequency == 0:
             print(f"Resettting because timesteps = {self.num_timesteps} and reset freq is = {self.reset_frequency} and self.num_timesteps % self.reset_frequency = {self.num_timesteps % self.reset_frequency}")
             if self.active_agents < self.num_agent:  # Ensure we don’t exceed the limit
