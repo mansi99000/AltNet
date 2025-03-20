@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", default="hopper-hop")
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--total_timesteps", default=1e6, type=int)
-parser.add_argument("--eval_freq", default=1e4, type=int)
+parser.add_argument("--eval_freq", default=1e4, type=int) 
 parser.add_argument("--SR", action='store_true')
 parser.add_argument("--RDE", action='store_true')
 parser.add_argument("--reset_freq", default=4e5, type=float)
@@ -24,6 +24,7 @@ parser.add_argument("--learning_starts", default=5000, type=int)
 parser.add_argument("--action_select_coef", default=50, type=int)
 parser.add_argument("--wandb", action='store_true')
 parser.add_argument("--entity_name", type=str)
+parser.add_argument("--job_id", type=str, default=os.getenv("SLURM_JOB_ID", "unknown"))
 
 args = parser.parse_args()
 
@@ -33,7 +34,7 @@ policy_kwargs = dict()
 
 if args.RDE:
     mode = 'RDE+SAC'
-    num_agent = 4
+    num_agent = 2
     reset = True
 elif args.SR:
     mode = 'SR+SAC'
@@ -77,7 +78,7 @@ if args.wandb:
     print("Seed is: ", args.seed)
     policy_kwargs.update(wandb=args.wandb)
     wandb.init(project="RDE_SAC", 
-               name=f"ge_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
+               name=f"ge_{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
                group=f"{args.env}",
                job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}",
                reinit=True)

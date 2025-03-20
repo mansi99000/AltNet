@@ -213,6 +213,9 @@ class SAC(OffPolicyAlgorithm):
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         optimizers = []
+
+        wandb.log({"active_agents": self.active_agents}, step=self.num_timesteps)
+
         # for i in range(self.num_agent):
         for i in range(self.active_agents):
             optimizers.append(self.actor[i].optimizer)
@@ -292,38 +295,38 @@ class SAC(OffPolicyAlgorithm):
             actors_losses.append(actor_losses)
             critics_losses.append(critic_losses)
 
+        print(f"{self.num_timesteps % self.reset_frequency}")
         if self.reset and self.num_timesteps % self.reset_frequency == 0:
-
-            if self.wandb:
-                wandb.log({"active_agents": self.active_agents}, step=self.num_timesteps)
-
+            print(f"Resettting because timesteps = {self.num_timesteps} and reset freq is = {self.reset_frequency} and self.num_timesteps % self.reset_frequency = {self.num_timesteps % self.reset_frequency}")
             if self.active_agents < self.num_agent:  # Ensure we don’t exceed the limit
                 self.active_agents += 1  # Add a new network
+                wandb.log({"active_agents": self.active_agents}, step=self.num_timesteps)
+
 
             # actor_num = int(self.num_reset % self.num_agent)
             actor_num = self.active_agents - 1 # Select the newly activated network
 
             # do we need this? Becuase the netwrok was initialized in the begining and has not been trained until now?
 
-            # self.policy.init_weights(self.actor[actor_num].latent_pi[0])
-            # self.policy.init_weights(self.actor[actor_num].latent_pi[2])
-            # self.policy.init_weights(self.actor[actor_num].mu)
+            self.policy.init_weights(self.actor[actor_num].latent_pi[0])
+            self.policy.init_weights(self.actor[actor_num].latent_pi[2])
+            self.policy.init_weights(self.actor[actor_num].mu)
 
-            # self.policy.init_weights(self.critic[actor_num].qf0[0])
-            # self.policy.init_weights(self.critic[actor_num].qf0[2])
-            # self.policy.init_weights(self.critic[actor_num].qf0[4])
+            self.policy.init_weights(self.critic[actor_num].qf0[0])
+            self.policy.init_weights(self.critic[actor_num].qf0[2])
+            self.policy.init_weights(self.critic[actor_num].qf0[4])
 
-            # self.policy.init_weights(self.critic_target[actor_num].qf0[0])
-            # self.policy.init_weights(self.critic_target[actor_num].qf0[2])
-            # self.policy.init_weights(self.critic_target[actor_num].qf0[4])
+            self.policy.init_weights(self.critic_target[actor_num].qf0[0])
+            self.policy.init_weights(self.critic_target[actor_num].qf0[2])
+            self.policy.init_weights(self.critic_target[actor_num].qf0[4])
 
-            # self.policy.init_weights(self.critic[actor_num].qf1[0])
-            # self.policy.init_weights(self.critic[actor_num].qf1[2])
-            # self.policy.init_weights(self.critic[actor_num].qf1[4])
+            self.policy.init_weights(self.critic[actor_num].qf1[0])
+            self.policy.init_weights(self.critic[actor_num].qf1[2])
+            self.policy.init_weights(self.critic[actor_num].qf1[4])
 
-            # self.policy.init_weights(self.critic_target[actor_num].qf1[0])
-            # self.policy.init_weights(self.critic_target[actor_num].qf1[2])
-            # self.policy.init_weights(self.critic_target[actor_num].qf1[4])
+            self.policy.init_weights(self.critic_target[actor_num].qf1[0])
+            self.policy.init_weights(self.critic_target[actor_num].qf1[2])
+            self.policy.init_weights(self.critic_target[actor_num].qf1[4])
 
             self.log_ent_coef[actor_num] = th.log(th.ones(1, device=self.device)).requires_grad_(True)
             self.ent_coef_optimizer[actor_num] = th.optim.Adam([self.log_ent_coef[actor_num]], lr=self.lr_schedule(1))
@@ -339,7 +342,8 @@ class SAC(OffPolicyAlgorithm):
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
         # for i in range(self.num_agent):
-        for i in range(self.active_agents):
+        # for i in range(self.active_agents):
+        for i in range(len(ent_coefss[0])):
             self.logger.record(f"train/ent_coef_{i + 1}", np.mean(ent_coefss, 0)[i])
             self.logger.record(f"train/actor_loss_{i + 1}", np.mean(actors_losses, 0)[i])
             self.logger.record(f"train/critic_loss_{i + 1}", np.mean(critics_losses, 0)[i])
@@ -347,7 +351,8 @@ class SAC(OffPolicyAlgorithm):
 
         if self.wandb:
             # for i in range(self.num_agent):
-            for i in range(self.active_agents):
+            # for i in range(self.active_agents):
+            for i in range(len(actors_losses[0])):
                 wandb.log({f"actor_loss{i + 1}": float(np.mean(actors_losses, 0)[i])}, step=self.num_timesteps)
                 wandb.log({f"critic_loss{i + 1}": float(np.mean(critics_losses, 0)[i])}, step=self.num_timesteps)
                 wandb.log({f"ent_coef_{i + 1}": float(np.mean(ent_coefss, 0)[i])}, step=self.num_timesteps)
