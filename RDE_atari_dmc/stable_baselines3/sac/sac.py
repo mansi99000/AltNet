@@ -111,6 +111,7 @@ class SAC(OffPolicyAlgorithm):
             _init_setup_model: bool = True,
             reset: bool = None,
             reset_frequency: float = 4e5,
+            distill_frequency: float = 4e5,
             wandb: bool = False,
             num_agent: int = 1,
     ):
@@ -151,9 +152,12 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef_optimizer = None
         self.reset = reset
         self.reset_frequency = reset_frequency
+        self.distill_frequency = distill_frequency
         self.num_reset = 0
         self.num_agent = num_agent
         self.wandb = wandb
+
+        self.distill = distill
 
         if _init_setup_model:
             self._setup_model()
@@ -198,6 +202,60 @@ class SAC(OffPolicyAlgorithm):
             # this will throw an error if a malformed string (different from 'auto')
             # is passed
             self.ent_coef_tensor = th.tensor(float(self.ent_coef), device=self.device)
+
+    def _copy_actor(self, actor: th.nn.Module) -> th.nn.Module:
+        actor_copy = type(actor)(**actor.init_kwargs).to(self.device)  # You may need to expose `init_kwargs`
+        actor_copy.load_state_dict(actor.state_dict())
+        for param in actor_copy.parameters():
+            param.requires_grad = False
+        actor_copy.eval()
+        return actor_copy
+
+
+    def self_distill(self, steps: int = 1000, batch_size: int = 256) -> None:
+        """
+        Perform self-distillation: Save current policy (teacher), reinitialize networks (student),
+        and minimize KL divergence from teacher to student.
+        """
+        i = 0  # You can extend this to all agents in an ensemble
+        actor = self.actor[i]
+
+        # Step 1: Save a frozen copy of the teacher policy
+        teacher_actor = self._copy_actor(actor)
+
+        # Step 2: Reinitialize current actor (student)
+        self.policy.init_weights(actor.latent_pi[0])
+        self.policy.init_weights(actor.latent_pi[2])
+        self.policy.init_weights(actor.mu)
+
+        optimizer = th.optim.Adam(actor.parameters(), lr=self.lr_schedule(1))
+
+        # Step 3: Distill via KL on actor outputs
+        for step in range(steps):
+            replay_data = self.replay_buffer.sample(batch_size, env=self._vec_normalize_env)
+            obs = replay_data.observations
+
+            with th.no_grad():
+                teacher_mean, teacher_log_std = teacher_actor.get_mean_log_std(obs)
+                teacher_std = teacher_log_std.exp()
+                teacher_dist = th.distributions.Normal(teacher_mean, teacher_std)
+
+            student_mean, student_log_std = actor.get_mean_log_std(obs)
+            student_std = student_log_std.exp()
+            student_dist = th.distributions.Normal(student_mean, student_std)
+
+            kl_loss = th.distributions.kl_divergence(teacher_dist, student_dist).mean()
+
+            optimizer.zero_grad()
+            kl_loss.backward()
+            optimizer.step()
+
+            if self.wandb and step % 100 == 0:
+                wandb.log({"self_distill/kl_loss": kl_loss.item()}, step=self.num_timesteps + step)
+
+        print(f"[Self-Distill] Done distilling agent {i} for {steps} steps.")
+
+
 
     def _create_aliases(self) -> None:
         self.actor = []
@@ -321,6 +379,9 @@ class SAC(OffPolicyAlgorithm):
 
             self.num_reset += 1
             self.policy.num_reset += 1
+
+        if self.distill and self.num_timesteps % self.distill_frequency == 0:
+            self.self_distill()
 
         self._n_updates += gradient_steps
 

@@ -17,13 +17,16 @@ parser.add_argument("--total_timesteps", default=1e6, type=int)
 parser.add_argument("--eval_freq", default=1e4, type=int)
 parser.add_argument("--SR", action='store_true')
 parser.add_argument("--RDE", action='store_true')
+parser.add_argument("--DISTILL", action='store_true')
 parser.add_argument("--reset_freq", default=4e5, type=float)
+parser.add_argument("--distill_freq", default=4e5, type=float)
 parser.add_argument("--replay_ratio", default=1, type=int)
 parser.add_argument("--learning_rate", default=3e-4, type=float)
 parser.add_argument("--learning_starts", default=5000, type=int)
 parser.add_argument("--action_select_coef", default=50, type=int)
 parser.add_argument("--wandb", action='store_true')
 parser.add_argument("--entity_name", type=str)
+parser.add_argument("--job_id", os.getenv("SLURM_JOB_ID", "unknown"))
 
 args = parser.parse_args()
 
@@ -35,14 +38,22 @@ if args.RDE:
     mode = 'RDE+SAC'
     num_agent = 4
     reset = True
+    distill = False
 elif args.SR:
     mode = 'SR+SAC'
     num_agent = 1
     reset = True
+    distill = False
+elif args.DISTILL:
+    mode = 'DISTILL+SAC' # check where does mode make a difference? 
+    num_agent = 1
+    reset = False
+    distill = True
 else:
     mode = 'SAC'
     num_agent = 1
     reset = False
+    distill = False
 
 policy_kwargs.update(num_agent=num_agent)
 
@@ -55,6 +66,7 @@ env = make_dmc_env(args.env, seed=args.seed)
 eval_env = dmc_make_env(args.env, args.seed+42)
 
 reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio)
+distill_freq = int(args.distill_freq)
 
 log_path = f"./logs/{args.env}/{args.replay_ratio}/{mode}"
 
@@ -85,7 +97,7 @@ if args.wandb:
     #            )
 
 model = SAC("MlpPolicy", env, verbose=1, policy_kwargs=policy_kwargs, reset=reset,
-            reset_frequency=reset_freq, gradient_steps=args.replay_ratio,
+            reset_frequency=reset_freq, distill_frequency=distill_freq, gradient_steps=args.replay_ratio,
             learning_rate=args.learning_rate, learning_starts=args.learning_starts,
             seed=args.seed, num_agent=num_agent, wandb=args.wandb)
 
