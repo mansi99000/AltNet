@@ -77,8 +77,8 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 if args.wandb:
     print("Seed is: ", args.seed)
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project="RDE_SAC", 
-               name=f"ge_{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
+    wandb.init(project="Basic_exps", 
+               name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
                group=f"{args.env}",
                job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}",
                reinit=True)
