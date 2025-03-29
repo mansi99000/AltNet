@@ -22,11 +22,11 @@ parser.add_argument("--reset_freq", default=4e5, type=float)
 parser.add_argument("--distill_freq", default=4e5, type=float)
 parser.add_argument("--replay_ratio", default=1, type=int)
 parser.add_argument("--learning_rate", default=3e-4, type=float)
-parser.add_argument("--learning_starts", default=5000, type=int)
+parser.add_argument("--learning_starts", default=5000, type=int) # 5000 TODO
 parser.add_argument("--action_select_coef", default=50, type=int)
 parser.add_argument("--wandb", action='store_true')
 parser.add_argument("--entity_name", type=str)
-parser.add_argument("--job_id", os.getenv("SLURM_JOB_ID", "unknown"))
+parser.add_argument("--job_id", type=str, default=os.getenv("SLURM_JOB_ID", "unknown"))
 
 args = parser.parse_args()
 
@@ -87,8 +87,8 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project="RDE_SAC", 
-               name=f"{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
+    wandb.init(project="DISTILL_SAC", 
+               name=f"{job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
                group=f"{args.env}",
                job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}",
                reinit=True)

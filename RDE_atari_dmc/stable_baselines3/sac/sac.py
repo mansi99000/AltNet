@@ -110,6 +110,7 @@ class SAC(OffPolicyAlgorithm):
             device: Union[th.device, str] = "auto",
             _init_setup_model: bool = True,
             reset: bool = None,
+            distill: bool = None, 
             reset_frequency: float = 4e5,
             distill_frequency: float = 4e5,
             wandb: bool = False,
