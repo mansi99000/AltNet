@@ -24,6 +24,7 @@ parser.add_argument("--learning_starts", default=5000, type=int)
 parser.add_argument("--action_select_coef", default=50, type=int)
 parser.add_argument("--wandb", action='store_true')
 parser.add_argument("--entity_name", type=str)
+parser.add_argument("--job_id", type=str, default=os.getenv("SLURM_JOB_ID", "unknown"))
 
 args = parser.parse_args()
 
@@ -54,7 +55,7 @@ print(f'env:{args.env}, mode:{mode}')
 env = make_dmc_env(args.env, seed=args.seed)
 eval_env = dmc_make_env(args.env, args.seed+42)
 
-reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio)
+reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio) # Rf = 400k; num_agent = 4 their rf = 100k; for SR, the rf = 400k
 
 log_path = f"./logs/{args.env}/{args.replay_ratio}/{mode}"
 
@@ -75,7 +76,7 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project="RDE_SAC", 
+    wandb.init(project="Mar_30", 
                name=f"{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
                group=f"{args.env}",
                job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}",

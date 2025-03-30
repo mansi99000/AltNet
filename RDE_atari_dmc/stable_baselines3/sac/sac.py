@@ -290,12 +290,13 @@ class SAC(OffPolicyAlgorithm):
 
         if self.reset and self.num_timesteps % self.reset_frequency == 0:
 
-            actor_num = int(self.num_reset % self.num_agent)
+            actor_num = int(self.num_reset % self.num_agent) # Determine which agent to reset.
 
             self.policy.init_weights(self.actor[actor_num].latent_pi[0])
             self.policy.init_weights(self.actor[actor_num].latent_pi[2])
-            self.policy.init_weights(self.actor[actor_num].mu)
-
+            self.policy.init_weights(self.actor[actor_num].mu) # last layer
+            
+            # critic 1
             self.policy.init_weights(self.critic[actor_num].qf0[0])
             self.policy.init_weights(self.critic[actor_num].qf0[2])
             self.policy.init_weights(self.critic[actor_num].qf0[4])
@@ -303,7 +304,8 @@ class SAC(OffPolicyAlgorithm):
             self.policy.init_weights(self.critic_target[actor_num].qf0[0])
             self.policy.init_weights(self.critic_target[actor_num].qf0[2])
             self.policy.init_weights(self.critic_target[actor_num].qf0[4])
-
+            
+            # critic 2
             self.policy.init_weights(self.critic[actor_num].qf1[0])
             self.policy.init_weights(self.critic[actor_num].qf1[2])
             self.policy.init_weights(self.critic[actor_num].qf1[4])
@@ -321,6 +323,7 @@ class SAC(OffPolicyAlgorithm):
 
             self.num_reset += 1
             self.policy.num_reset += 1
+            # What is the difference between num_reset and policy_num_reset
 
         self._n_updates += gradient_steps
 
