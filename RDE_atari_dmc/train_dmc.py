@@ -14,13 +14,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", default="hopper-hop")
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--total_timesteps", default=1e6, type=int)
-parser.add_argument("--eval_freq", default=1e4, type=int)
+parser.add_argument("--eval_freq", default=1e4, type=int) #1e4
 parser.add_argument("--SR", action='store_true')
 parser.add_argument("--RDE", action='store_true')
+parser.add_argument("--PS", action='store_true')
 parser.add_argument("--reset_freq", default=4e5, type=float)
 parser.add_argument("--replay_ratio", default=1, type=int)
 parser.add_argument("--learning_rate", default=3e-4, type=float)
-parser.add_argument("--learning_starts", default=5000, type=int)
+parser.add_argument("--learning_starts", default=5000, type=int) #5000
 parser.add_argument("--action_select_coef", default=50, type=int)
 parser.add_argument("--wandb", action='store_true')
 parser.add_argument("--entity_name", type=str)
@@ -33,17 +34,25 @@ set_random_seed(args.seed)
 policy_kwargs = dict()
 
 if args.RDE:
-    mode = 'RDE+SAC'
+    mode = 'RDE'
     num_agent = 4
     reset = True
+    ps = False
 elif args.SR:
-    mode = 'SR+SAC'
+    mode = 'SR'
     num_agent = 1
     reset = True
+    ps = False
+elif args.PS:
+    mode = 'PS'
+    num_agent = 2
+    reset = True
+    ps = True
 else:
     mode = 'SAC'
     num_agent = 1
     reset = False
+    ps = False
 
 policy_kwargs.update(num_agent=num_agent)
 
@@ -77,7 +86,7 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
     wandb.init(project="Mar_30", 
-               name=f"{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
+               name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}",
                group=f"{args.env}",
                job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}",
                reinit=True)
