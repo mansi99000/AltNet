@@ -110,6 +110,7 @@ class SAC(OffPolicyAlgorithm):
             device: Union[th.device, str] = "auto",
             _init_setup_model: bool = True,
             reset: bool = None,
+            ps: bool = None,
             reset_frequency: float = 4e5,
             wandb: bool = False,
             num_agent: int = 1,
@@ -150,6 +151,7 @@ class SAC(OffPolicyAlgorithm):
         self.target_update_interval = target_update_interval
         self.ent_coef_optimizer = None
         self.reset = reset
+        self.ps = ps
         self.reset_frequency = reset_frequency
         self.num_reset = 0
         self.num_agent = num_agent
@@ -291,7 +293,8 @@ class SAC(OffPolicyAlgorithm):
         if self.reset and self.num_timesteps % self.reset_frequency == 0:
 
             actor_num = int(self.num_reset % self.num_agent) # Determine which agent to reset.
-
+            print("agent being reset: ", actor_num)
+            print("timesetpe: ", self.num_timesteps)
             self.policy.init_weights(self.actor[actor_num].latent_pi[0])
             self.policy.init_weights(self.actor[actor_num].latent_pi[2])
             self.policy.init_weights(self.actor[actor_num].mu) # last layer

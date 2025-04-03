@@ -5,7 +5,7 @@ import torch as th
 from torch import nn, Tensor
 import numpy as np
 import wandb
-
+import pdb
 from stable_baselines3.common.distributions import SquashedDiagGaussianDistribution, StateDependentNoiseDistribution
 from stable_baselines3.common.policies import BasePolicy, ContinuousCritic
 from stable_baselines3.common.preprocessing import get_action_dim
@@ -354,6 +354,11 @@ class SACPolicy(BasePolicy):
             -> Tuple[th.Tensor, Union[int, float]]:
         if self.num_agent == 1:
             return self.actor0(observation, deterministic), 0.5
+        if self.num_agent == 2: # implies ps mode for now
+            actor = getattr(self, f"actor{(self.num_reset + self.num_agent) % self.num_agent}") # will give the alst reset actor?
+            # print("I used actor", (self.num_reset + self.num_agent) % self.num_agent)
+            # pdb.set_trace()
+            return actor(observation, deterministic), 0.5 # I don't think this number matters
         else:
             if self.num_reset > 0:
                 actions = []
