@@ -211,7 +211,7 @@ class SAC(OffPolicyAlgorithm):
             self.critic_target.append(getattr(self.policy, f"critic_target{i}"))
         self.num_agent = self.policy.num_agent
 
-    def train(self, gradient_steps: int, batch_size: int = 64) -> None:
+    def train(self, gradient_steps: int, batch_size: int = 256) -> None:
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         optimizers = []
