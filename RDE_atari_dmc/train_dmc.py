@@ -43,7 +43,7 @@ if args.RDE:
     reset = True
     ps = False
 elif args.SR:
-    mode = 'SR'
+    mode = 'SR+SAC'
     num_agent = 1
     reset = True
     ps = False
