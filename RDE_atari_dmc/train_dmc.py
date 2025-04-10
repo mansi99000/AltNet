@@ -7,7 +7,7 @@ import argparse
 import wandb
 import csv
 import os
-
+import subprocess
 wandb.login()
 
 parser = argparse.ArgumentParser()
