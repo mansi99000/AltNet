@@ -91,7 +91,7 @@ smmap==5.0.0
 stable-baselines3==1.6.2
 tbb==2021.8.0
 toml @ file:///home/conda/feedstock_root/build_artifacts/toml_1734091811753/work
-torch==1.13.1
+torch==2.2.2
 tornado @ file:///home/conda/feedstock_root/build_artifacts/tornado_1732615921868/work
 tqdm==4.64.1
 typing_extensions==4.4.0
