@@ -111,6 +111,7 @@ class SAC(OffPolicyAlgorithm):
             _init_setup_model: bool = True,
             reset: bool = None,
             reset_frequency: float = 4e5,
+            switch_frequency: float = 25000,
             wandb: bool = False,
             num_agent: int = 1,
     ):
@@ -151,6 +152,7 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef_optimizer = None
         self.reset = reset
         self.reset_frequency = reset_frequency
+        self.switch_frequency = switch_frequency
         self.num_reset = 0
         self.num_agent = num_agent
         self.wandb = wandb
