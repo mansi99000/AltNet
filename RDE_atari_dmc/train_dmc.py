@@ -69,8 +69,8 @@ env = make_dmc_env(args.env, seed=args.seed)
 eval_env = dmc_make_env(args.env, args.seed+42)
 
 # ensures that each agent is reset after the same number of updates as in the vanilla method
-#reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio) # Rf = 400k; num_agent = 4 their rf = 100k; for SR, the rf = 400k
-reset_freq = int(args.reset_freq)
+reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio) # Rf = 400k; num_agent = 4 their rf = 100k; for SR, the rf = 400k
+#reset_freq = int(args.reset_freq)
 
 log_path = f"./logs/{args.env}/{args.replay_ratio}/{mode}"
 
