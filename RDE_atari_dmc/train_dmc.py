@@ -37,7 +37,7 @@ branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).s
 
 if args.RDE:
     mode = 'RDE'
-    num_agent = 4
+    num_agent = 3
     reset = True
     ps = False
 elif args.SR:
@@ -66,8 +66,8 @@ print(f'env:{args.env}, mode:{mode}')
 env = make_dmc_env(args.env, seed=args.seed)
 eval_env = dmc_make_env(args.env, args.seed+42)
 
-# reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio) # Rf = 400k; num_agent = 4 their rf = 100k; for SR, the rf = 400k
-reset_freq = int(args.reset_freq)
+reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio) # Rf = 400k; num_agent = 4 their rf = 100k; for SR, the rf = 400k
+#reset_freq = int(args.reset_freq)
 log_path = f"./logs/{args.env}/{args.replay_ratio}/{mode}"
 
 # M
@@ -90,7 +90,7 @@ if args.wandb:
     wandb.init(project=f"{args.env}", 
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
-               job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}_{reset_freq}",
+               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{args.action_select_coef}_{reset_freq}",
                dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb",
                reinit=True)
     # wandb.init(project="RDE_SAC",
