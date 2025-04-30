@@ -47,7 +47,7 @@ elif args.SR:
     ps = False
 elif args.PS:
     mode = 'PS'
-    num_agent = 2
+    num_agent = 4
     reset = True
     ps = True
 else:
