@@ -354,7 +354,7 @@ class SACPolicy(BasePolicy):
             -> Tuple[th.Tensor, Union[int, float]]:
         if self.num_agent == 1:
             return self.actor0(observation, deterministic), 0.5
-        if self.num_agent == 4: # implies ps mode for now
+        if self.num_agent == 2: # implies ps mode for now
             actor = getattr(self, f"actor{(self.num_reset + self.num_agent) % self.num_agent}") # will give the alst reset actor?
             # print("I used actor", (self.num_reset + self.num_agent) % self.num_agent)
             # pdb.set_trace()
