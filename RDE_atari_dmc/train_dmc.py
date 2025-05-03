@@ -39,7 +39,7 @@ branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).s
 
 if args.RDE:
     mode = 'RDE'
-    num_agent = 2
+    num_agent = 4
     reset = True
     ps = False
 elif args.SR:
