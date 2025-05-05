@@ -67,6 +67,8 @@ print(f'env:{args.env}, mode:{mode}')
 
 env = make_dmc_env(args.env, seed=args.seed)
 eval_env = dmc_make_env(args.env, args.seed+42)
+#eval_env = make_dmc_env(args.env, seed=args.seed+42) #faster eval and consistency in results? # M
+
 
 # ensures that each agent is reset after the same number of updates as in the vanilla method
 reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio) # Rf = 400k; num_agent = 4 their rf = 100k; for SR, the rf = 400k
@@ -102,7 +104,7 @@ if args.wandb:
     #            name=f"{mode}_{args.replay_ratio}_{args.seed}"
     #            )
 
-model = SAC("MlpPolicy", env, verbose=1, policy_kwargs=policy_kwargs, reset=reset,
+model = SAC("MlpPolicy", env, verbose=0, policy_kwargs=policy_kwargs, reset=reset,
             reset_frequency=reset_freq, gradient_steps=args.replay_ratio,
             learning_rate=args.learning_rate, learning_starts=args.learning_starts,
             seed=args.seed, num_agent=num_agent, wandb=args.wandb)
