@@ -97,7 +97,7 @@ if args.wandb:
     #            name=f"{mode}_{args.replay_ratio}_{args.seed}"
     #            )
 
-model = SAC("MlpPolicy", env, verbose=1, policy_kwargs=policy_kwargs, reset=reset,
+model = SAC("MlpPolicy", env, verbose=0, policy_kwargs=policy_kwargs, reset=reset,
             reset_frequency=reset_freq, gradient_steps=args.replay_ratio,
             learning_rate=args.learning_rate, learning_starts=args.learning_starts,
             seed=args.seed, num_agent=num_agent, wandb=args.wandb)

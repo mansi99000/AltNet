@@ -493,7 +493,7 @@ class EvalCallback(EventCallback):
 
             if self.wandb:
                 wandb.log({"return": float(mean_reward)}, step=self.num_timesteps)
-                wandb.log({"action_ratio": float(action_ratio)}, step=self.num_timesteps)
+                #wandb.log({"action_ratio": float(action_ratio)}, step=self.num_timesteps)
 
             f = open(f'{self.csv_path}/result.csv', 'a', encoding='utf-8', newline='')
             wr = csv.writer(f)
