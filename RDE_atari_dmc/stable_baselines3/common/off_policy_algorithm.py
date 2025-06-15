@@ -493,15 +493,40 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     if self._vec_normalize_env is not None:
                         next_obs[i] = self._vec_normalize_env.unnormalize_obs(next_obs[i, :])
 
-        replay_buffer.add(
-            self._last_original_obs,
-            next_obs,
-            buffer_action,
-            reward_,
-            dones,
-            infos,
-            action_index
-        )
+        # If action_index is a batch (e.g., array or list), store each env's transition separately
+        if isinstance(action_index, (np.ndarray, list)) and len(action_index) == self.n_envs:
+            for env_idx in range(self.n_envs):
+                # Ensure action_index[env_idx] is a scalar
+                ai = action_index[env_idx]
+                if isinstance(ai, (np.ndarray, list)) and np.array(ai).size == 1:
+                    ai = np.array(ai).item()
+                elif hasattr(ai, "item") and callable(ai.item):
+                    ai = ai.item()
+                replay_buffer.add(
+                    self._last_original_obs[env_idx],
+                    next_obs[env_idx],
+                    buffer_action[env_idx],
+                    reward_[env_idx],
+                    dones[env_idx],
+                    [infos[env_idx]],  # wrap in list for single env
+                    ai
+                )
+        else:
+            # Ensure action_index is a scalar
+            ai = action_index
+            if isinstance(ai, (np.ndarray, list)) and np.array(ai).size == 1:
+                ai = np.array(ai).item()
+            elif hasattr(ai, "item") and callable(ai.item):
+                ai = ai.item()
+            replay_buffer.add(
+                self._last_original_obs,
+                next_obs,
+                buffer_action,
+                reward_,
+                dones,
+                infos,
+                ai
+            )
 
         self._last_obs = new_obs
         # Save the unnormalized observation

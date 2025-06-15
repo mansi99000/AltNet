@@ -17,6 +17,18 @@ from stable_baselines3.common.torch_layers import (
 from stable_baselines3.common.type_aliases import Schedule
 
 
+def to_scalar(x):
+    # Convert to numpy if tensor
+    if hasattr(x, "detach"):
+        x = x.detach().cpu().numpy()
+    x = np.array(x).squeeze()
+    # If still not a scalar, take the first element
+    if x.shape == ():
+        return x.item()
+    else:
+        return x.flat[0]
+
+
 class QNetwork(BasePolicy):
     """
     Action-Value (Q-Value) network for DQN
@@ -208,7 +220,9 @@ class DQNPolicy(BasePolicy):
                 action_index = th.multinomial(q_values.to(th.float64).exp(), 1)
                 actions = th.cat(actions, dim=1)
                 action = th.gather(actions, dim=1, index=action_index).squeeze()
-                return action, action_index.squeeze()
+                ai = to_scalar(action_index)
+                ai = to_scalar(ai)
+                return action, ai
             else:
                 action_index = int((np.random.random(1)) // (1 / self.num_agent))
                 return getattr(self, f"q_net{action_index}")._predict(obs, deterministic=deterministic), action_index
