@@ -190,6 +190,9 @@ class DQNPolicy(BasePolicy):
         Any, float]:
         if self.num_agent == 1:
             return self.q_net0._predict(obs, deterministic=deterministic), 0.5
+        elif self.num_agent == 2:
+            # return the q value of the last reset q net
+            return getattr(self, f"q_net{(self.num_reset + self.num_agent) % self.num_agent}")._predict(obs, deterministic=deterministic), 0.5
         else:
             if self.num_reset > 0:
                 actions = []
