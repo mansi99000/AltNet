@@ -85,7 +85,7 @@ eval_callback = EvalCallback(env, best_model_save_path=log_path, log_path=log_pa
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project=f"{args.env}", entity=args.entity_name,
+    wandb.init(project=f"{args.env}_06_16", entity=args.entity_name,
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
                job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{args.action_select_coef}_{reset_freq}", 
