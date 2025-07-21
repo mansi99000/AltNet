@@ -521,6 +521,7 @@ class ActorCriticPolicy(BasePolicy):
         )
         return data
 
+
     def reset_noise(self, n_envs: int = 1) -> None:
         """
         Sample new weights for the exploration matrix.
@@ -659,15 +660,10 @@ class ActorCriticPolicy(BasePolicy):
         else:
             raise ValueError("Invalid action distribution")
 
-    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
-        """
-        Get the action according to the policy for a given observation.
+    def _predict(self, observation: th.Tensor, deterministic: bool = False, evaluation: bool = False):
+        actions = self.get_distribution(observation).get_actions(deterministic=deterministic)
+        return actions, None
 
-        :param observation:
-        :param deterministic: Whether to use stochastic or deterministic actions
-        :return: Taken action according to the policy
-        """
-        return self.get_distribution(observation).get_actions(deterministic=deterministic)
 
     def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
         """
