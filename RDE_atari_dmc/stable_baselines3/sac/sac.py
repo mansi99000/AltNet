@@ -294,6 +294,12 @@ class SAC(OffPolicyAlgorithm):
 
             actor_num = int(self.num_reset % self.num_agent) # Determine which agent to reset.
 
+            # Set the random seed to ensure reproducible weight initialization
+            # comment this out if you don't want to reset the weights using the same seed
+            # if self.seed is not None:
+            #     th.manual_seed(self.seed)
+            #     np.random.seed(self.seed)
+
             self.policy.init_weights(self.actor[actor_num].latent_pi[0])
             self.policy.init_weights(self.actor[actor_num].latent_pi[2])
             self.policy.init_weights(self.actor[actor_num].mu) # last layer

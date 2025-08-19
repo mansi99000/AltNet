@@ -93,16 +93,13 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project=f"CoLLAs_{args.env}", 
+    wandb.init(project=f"AltNet", #CoLLAs_{args.env}
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
-               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{reset_freq}", # _rf_{reset_freq}
-               #job_type=f"{mode}_{args.replay_ratio}_{args.action_select_coef}", # _rf_{reset_freq}
+               job_type=f"{mode}_{args.replay_ratio}_50_{reset_freq}", # _rf_{reset_freq}
                dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb", # TODO: check if this is correct
                reinit=True)
-    # wandb.init(project="RDE_SAC",
-    #            name=f"{mode}_{args.replay_ratio}_{args.seed}"
-    #            )
+
 
 model = SAC("MlpPolicy", env, verbose=0, policy_kwargs=policy_kwargs, reset=reset,
             reset_frequency=reset_freq, gradient_steps=args.replay_ratio,
