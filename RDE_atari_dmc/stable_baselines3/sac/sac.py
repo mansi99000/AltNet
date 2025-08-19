@@ -292,6 +292,11 @@ class SAC(OffPolicyAlgorithm):
 
         if self.reset and self.num_timesteps % self.reset_frequency == 0:
 
+            # # comment this out if you don't want to reset the weights using the same seed
+            # if self.seed is not None:
+            #     th.manual_seed(self.seed)
+            #     np.random.seed(self.seed)
+
             actor_num = int(self.num_reset % self.num_agent) # Determine which agent to reset.
             print("agent being reset: ", actor_num)
             print("timesetpe: ", self.num_timesteps)
@@ -337,11 +342,11 @@ class SAC(OffPolicyAlgorithm):
             self.logger.record(f"train/critic_loss_{i + 1}", np.mean(critics_losses, 0)[i])
             self.logger.record(f"train/ent_coef_loss_{i + 1}", np.mean(ent_coefs_losses, 0)[i])
 
-        # if self.wandb:
-        #     for i in range(self.num_agent):
-        #         wandb.log({f"actor_loss{i + 1}": float(np.mean(actors_losses, 0)[i])}, step=self.num_timesteps)
-        #         wandb.log({f"critic_loss{i + 1}": float(np.mean(critics_losses, 0)[i])}, step=self.num_timesteps)
-        #         wandb.log({f"ent_coef_{i + 1}": float(np.mean(ent_coefss, 0)[i])}, step=self.num_timesteps)
+        if self.wandb:
+            for i in range(self.num_agent):
+                wandb.log({f"actor_loss{i + 1}": float(np.mean(actors_losses, 0)[i])}, step=self.num_timesteps)
+                wandb.log({f"critic_loss{i + 1}": float(np.mean(critics_losses, 0)[i])}, step=self.num_timesteps)
+                wandb.log({f"ent_coef_{i + 1}": float(np.mean(ent_coefss, 0)[i])}, step=self.num_timesteps)
 
     def learn(
             self: SelfSAC,
