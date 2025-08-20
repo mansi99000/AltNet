@@ -492,6 +492,7 @@ class EvalCallback(EventCallback):
             action_ratio = np.sum(self.model.replay_buffer.index[int(self.num_timesteps - self.eval_freq):self.num_timesteps])/(self.eval_freq)
 
             if self.wandb:
+                print(f"Logging to wandb: return={float(mean_reward)} at step={self.num_timesteps}")
                 wandb.log({"return": float(mean_reward)}, step=self.num_timesteps)
                 #wandb.log({"action_ratio": float(action_ratio)}, step=self.num_timesteps)
 

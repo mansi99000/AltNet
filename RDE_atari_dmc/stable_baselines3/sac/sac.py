@@ -342,11 +342,11 @@ class SAC(OffPolicyAlgorithm):
             self.logger.record(f"train/critic_loss_{i + 1}", np.mean(critics_losses, 0)[i])
             self.logger.record(f"train/ent_coef_loss_{i + 1}", np.mean(ent_coefs_losses, 0)[i])
 
-        # if self.wandb:
-        #     for i in range(self.num_agent):
-        #         wandb.log({f"actor_loss{i + 1}": float(np.mean(actors_losses, 0)[i])}, step=self.num_timesteps)
-        #         wandb.log({f"critic_loss{i + 1}": float(np.mean(critics_losses, 0)[i])}, step=self.num_timesteps)
-        #         wandb.log({f"ent_coef_{i + 1}": float(np.mean(ent_coefss, 0)[i])}, step=self.num_timesteps)
+        if self.wandb:
+            for i in range(self.num_agent):
+                wandb.log({f"actor_loss{i + 1}": float(np.mean(actors_losses, 0)[i])}, step=self.num_timesteps)
+                wandb.log({f"critic_loss{i + 1}": float(np.mean(critics_losses, 0)[i])}, step=self.num_timesteps)
+                wandb.log({f"ent_coef_{i + 1}": float(np.mean(ent_coefss, 0)[i])}, step=self.num_timesteps)
 
     def learn(
             self: SelfSAC,

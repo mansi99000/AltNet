@@ -87,10 +87,6 @@ wr.writerow([args])
 args.filename = filename
 f.close()
 
-eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=log_path,
-                             eval_freq=args.eval_freq, deterministic=True,
-                             render=False, wandb=args.wandb)
-
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
     wandb.init(project=f"AltNet", #CoLLAs_{args.env}
@@ -99,6 +95,10 @@ if args.wandb:
                job_type=f"{mode}_{args.replay_ratio}_50_{reset_freq}", # _rf_{reset_freq}
                dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb", # TODO: check if this is correct
                reinit=True)
+
+eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=log_path,
+                             eval_freq=args.eval_freq, deterministic=True,
+                             render=False, wandb=args.wandb)
 
 
 model = SAC("MlpPolicy", env, verbose=0, policy_kwargs=policy_kwargs, reset=reset,
