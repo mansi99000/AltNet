@@ -348,6 +348,11 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # If no `gradient_steps` is specified,
                 # do as many gradients steps as steps performed during the rollout
                 gradient_steps = self.gradient_steps if self.gradient_steps >= 0 else rollout.episode_timesteps
+                
+                # Dynamic replay ratio adjustment (if implemented in child class)
+                if hasattr(self, 'dynamic_rr') and self.dynamic_rr and self.num_timesteps >= self.rr_change_timestep:
+                    gradient_steps = self.rr_after_change
+                
                 # Special case when the user passes `gradient_steps=0`
                 if gradient_steps > 0:
                     self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)

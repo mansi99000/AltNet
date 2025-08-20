@@ -113,6 +113,9 @@ class SAC(OffPolicyAlgorithm):
             reset_frequency: float = 4e5,
             wandb: bool = False,
             num_agent: int = 1,
+            dynamic_rr: bool = False,
+            rr_change_timestep: int = 400000,
+            rr_after_change: int = 8,
     ):
 
         super().__init__(
@@ -154,6 +157,9 @@ class SAC(OffPolicyAlgorithm):
         self.num_reset = 0
         self.num_agent = num_agent
         self.wandb = wandb
+        self.dynamic_rr = dynamic_rr
+        self.rr_change_timestep = rr_change_timestep
+        self.rr_after_change = rr_after_change
 
         if _init_setup_model:
             self._setup_model()
@@ -212,6 +218,15 @@ class SAC(OffPolicyAlgorithm):
     def train(self, gradient_steps: int, batch_size: int = 64) -> None:
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
+        
+        # Dynamic replay ratio adjustment
+        if self.dynamic_rr and self.num_timesteps >= self.rr_change_timestep:
+            gradient_steps = self.rr_after_change
+            # Log the replay ratio change (only once)
+            if not hasattr(self, '_rr_changed_logged'):
+                self.logger.record("train/replay_ratio_change", self.rr_after_change)
+                self.logger.record("train/replay_ratio_change_timestep", self.num_timesteps)
+                self._rr_changed_logged = True
         optimizers = []
         for i in range(self.num_agent):
             optimizers.append(self.actor[i].optimizer)
@@ -334,6 +349,11 @@ class SAC(OffPolicyAlgorithm):
         self._n_updates += gradient_steps
 
         self.logger.record("train/n_updates", self._n_updates, exclude="tensorboard")
+        
+        # Log current replay ratio
+        current_rr = self.rr_after_change if (self.dynamic_rr and self.num_timesteps >= self.rr_change_timestep) else self.gradient_steps
+        self.logger.record("train/current_replay_ratio", current_rr)
+        
         for i in range(self.num_agent):
             self.logger.record(f"train/ent_coef_{i + 1}", np.mean(ent_coefss, 0)[i])
             self.logger.record(f"train/actor_loss_{i + 1}", np.mean(actors_losses, 0)[i])
