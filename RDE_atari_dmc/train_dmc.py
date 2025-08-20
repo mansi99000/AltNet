@@ -32,6 +32,10 @@ args = parser.parse_args()
 set_random_seed(args.seed)
 
 policy_kwargs = dict()
+
+# # Reduce network size by half (from [1024, 1024] to [512, 512])
+# policy_kwargs.update(net_arch=[512, 512]) # reduce size # Ablation
+
 branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode('utf-8')
 
 
@@ -65,9 +69,13 @@ print(f'env:{args.env}, mode:{mode}')
 
 env = make_dmc_env(args.env, seed=args.seed)
 eval_env = dmc_make_env(args.env, args.seed+42)
+#eval_env = make_dmc_env(args.env, seed=args.seed+42) #faster eval and consistency in results? # M
 
+
+# ensures that each agent is reset after the same number of updates as in the vanilla method
 reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio) # Rf = 400k; num_agent = 4 their rf = 100k; for SR, the rf = 400k
 #reset_freq = int(args.reset_freq)
+
 log_path = f"./logs/{args.env}/{args.replay_ratio}/{mode}"
 
 # M
@@ -90,7 +98,7 @@ if args.wandb:
     wandb.init(project=f"CoLLAs_{args.env}", 
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
-               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{reset_freq}_same_seed_rein",
+               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{reset_freq}_reduced_size_512",
                dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb",
                reinit=True)
 
