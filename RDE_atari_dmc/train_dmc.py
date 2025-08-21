@@ -89,10 +89,11 @@ f.close()
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project=f"AltNet", #CoLLAs_{args.env}
+    wandb.init(project=f"CoLLAs_{args.env}", #
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
-               job_type=f"{mode}_{args.replay_ratio}_50_{reset_freq}", # _rf_{reset_freq}
+               # job_type=f"{mode}_{args.replay_ratio}_50_{reset_freq}", # _rf_{reset_freq}
+               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_buffer_{args.buffer_size}_lr_{args.learning_rate}", 
                dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb", # TODO: check if this is correct
                reinit=True)
 
