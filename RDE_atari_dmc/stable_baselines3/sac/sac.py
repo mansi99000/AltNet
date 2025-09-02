@@ -303,7 +303,7 @@ class SAC(OffPolicyAlgorithm):
             actors_losses.append(actor_losses)
             critics_losses.append(critic_losses)
 
-        if self.reset and self.num_timesteps % self.reset_frequency == 0:
+        if self.reset and self.num_timesteps % self.reset_frequency == 0: # and self.num_timesteps < 650000:
 
             actor_num = int(self.num_reset % self.num_agent) # Determine which agent to reset.
 
