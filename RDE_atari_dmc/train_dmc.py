@@ -93,7 +93,7 @@ if args.wandb:
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
                # job_type=f"{mode}_{args.replay_ratio}_50_{reset_freq}", # _rf_{reset_freq}
-               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_50_{reset_freq}", 
+               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_50_{reset_freq}_m", 
                dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb", # TODO: check if this is correct
                reinit=True)
 
