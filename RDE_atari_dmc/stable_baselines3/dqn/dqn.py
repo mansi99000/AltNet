@@ -241,19 +241,26 @@ class DQN(OffPolicyAlgorithm):
             total_losses.append(losses)
 
         if self.reset and self.num_timesteps % self.reset_freqency == 0:
+            # Check if it's time to reset (every reset_frequency steps)
 
+            # Select which agent to reset (cycles through agents: 0, 1, 2, 0, 1, 2, ...)
             q_num = int(self.num_reset % self.num_agent)
 
+            # Reset the OUTPUT LAYER of the Q-network (the layer that produces Q-values for each action)
             self.policy.init_weights(self.q_net[q_num].q_net[0])
+            # Also reset the corresponding target network output layer
             self.policy.init_weights(self.q_net_target[q_num].q_net[0])
 
             if self.all_reset:
-
+                # If all_reset flag is set, ALSO reset the FIRST LINEAR LAYER of the feature extractor
+                # This is a different layer from the output layer above
                 self.policy.init_weights(self.q_net[q_num].features_extractor.linear[0])
                 self.policy.init_weights(self.q_net_target[q_num].features_extractor.linear[0])
 
+            # Create a fresh optimizer for this agent (resets optimizer state like momentum)
             self.q_net[q_num].optimizer = th.optim.Adam(self.q_net[q_num].parameters(), lr=self.lr_schedule(1))
 
+            # Track how many resets we've done
             self.num_reset += 1
             self.policy.num_reset += 1
 

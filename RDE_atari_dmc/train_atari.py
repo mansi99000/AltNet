@@ -13,12 +13,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", default="AlienNoFrameskip-v4")
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--n_envs", default=4, type=int)
-parser.add_argument("--total_timesteps", default=2e5, type=float)
+parser.add_argument("--total_timesteps", default=1e5, type=float)
 parser.add_argument("--eval_freq", default=5e3, type=float)
 parser.add_argument("--SR", action='store_true')
 parser.add_argument("--RDE", action='store_true')
 parser.add_argument("--PS", action='store_true')
-parser.add_argument("--reset_freq", default=4e4, type=float)
+parser.add_argument("--reset_freq", default=5e3, type=float)
 parser.add_argument("--replay_ratio", default=1, type=int)
 parser.add_argument("--learning_starts", default=2000, type=int)
 parser.add_argument("--action_select_coef", default=50, type=int)
@@ -85,10 +85,10 @@ eval_callback = EvalCallback(env, best_model_save_path=log_path, log_path=log_pa
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project=f"{args.env}_06_16", entity=args.entity_name,
+    wandb.init(project=f"DQN_Atari_{args.env}", entity=args.entity_name,
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
-               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{args.action_select_coef}_{reset_freq}", 
+               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{args.action_select_coef}_{reset_freq}_{args.all_reset}", 
                dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb", 
                reinit=True)
 

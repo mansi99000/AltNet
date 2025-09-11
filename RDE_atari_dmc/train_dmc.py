@@ -99,10 +99,11 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project=f"CoLLAs_{args.env}", #CoLLAs_
+    wandb.init(project=f"{args.env}", #CoLLAs_
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
-               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_50_{reset_freq}_reduced_size_128", 
+               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_50_{reset_freq}", 
+               # _every_step_reset
                # _buffer_{args.buffer_size}_lr_{args.learning_rate}
                # _dynamic_rr_{args.rr_change_timestep}_{args.rr_after_change}
                # _reduced_size_512

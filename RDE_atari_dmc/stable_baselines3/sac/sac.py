@@ -239,7 +239,7 @@ class SAC(OffPolicyAlgorithm):
         ent_coefs_losses, ent_coefss = [], []
         actors_losses, critics_losses = [], []
 
-        for gradient_step in range(gradient_steps):
+        for gradient_step in range(gradient_steps):  # *4 for every step reset
             ent_coef_losses, ent_coefs = [], []
             actor_losses, critic_losses = [], []
             # Sample replay buffer
