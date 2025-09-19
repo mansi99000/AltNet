@@ -20,7 +20,7 @@ parser.add_argument("--RDE", action='store_true')
 parser.add_argument("--PS", action='store_true')
 parser.add_argument("--reset_freq", default=4e5, type=float)
 parser.add_argument("--replay_ratio", default=1, type=int)
-parser.add_argument("--learning_rate", default=3e-4, type=float)
+parser.add_argument("--learning_rate", default=3e-4, type=float) # 0.0003
 parser.add_argument("--learning_starts", default=5000, type=int) #5000
 parser.add_argument("--action_select_coef", default=50, type=int)
 parser.add_argument("--wandb", action='store_true')
@@ -30,6 +30,7 @@ parser.add_argument("--dynamic_rr", action='store_true', help="Enable dynamic re
 parser.add_argument("--rr_change_timestep", default=400000, type=int, help="Timestep at which to change replay ratio")
 parser.add_argument("--rr_after_change", default=8, type=int, help="Replay ratio after the change point")
 parser.add_argument("--buffer_size", default=1000000, type=int, help="Size of the replay buffer")
+parser.add_argument("--reset_stop_timestep", default=1e6, type=int, help="Timestep at which resets stop")
 
 args = parser.parse_args()
 
@@ -99,10 +100,10 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project=f"{args.env}", #CoLLAs_
+    wandb.init(project=f"CoLLAs_{args.env}", #CoLLAs_
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
-               job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_50_{reset_freq}", 
+               job_type=f"{mode}_{args.replay_ratio}_{reset_freq}", 
                # _every_step_reset
                # _buffer_{args.buffer_size}_lr_{args.learning_rate}
                # _dynamic_rr_{args.rr_change_timestep}_{args.rr_after_change}
@@ -113,10 +114,10 @@ if args.wandb:
 
 
 model = SAC("MlpPolicy", env, verbose=0, policy_kwargs=policy_kwargs, reset=reset,
-            reset_frequency=reset_freq, gradient_steps=args.replay_ratio,
-            learning_rate=args.learning_rate, learning_starts=args.learning_starts,
-            seed=args.seed, num_agent=num_agent, wandb=args.wandb,
-            dynamic_rr=args.dynamic_rr, rr_change_timestep=args.rr_change_timestep, 
+            reset_frequency=reset_freq, reset_stop_timestep=args.reset_stop_timestep,
+            gradient_steps=args.replay_ratio, learning_rate=args.learning_rate, 
+            learning_starts=args.learning_starts, seed=args.seed, num_agent=num_agent, 
+            wandb=args.wandb, dynamic_rr=args.dynamic_rr, rr_change_timestep=args.rr_change_timestep, 
             rr_after_change=args.rr_after_change, buffer_size=args.buffer_size)
 
 model.learn(total_timesteps=args.total_timesteps, callback=eval_callback)

@@ -111,6 +111,7 @@ class SAC(OffPolicyAlgorithm):
             _init_setup_model: bool = True,
             reset: bool = None,
             reset_frequency: float = 4e5,
+            reset_stop_timestep: float = 1e6,
             wandb: bool = False,
             num_agent: int = 1,
             dynamic_rr: bool = False,
@@ -154,6 +155,7 @@ class SAC(OffPolicyAlgorithm):
         self.ent_coef_optimizer = None
         self.reset = reset
         self.reset_frequency = reset_frequency
+        self.reset_stop_timestep = reset_stop_timestep
         self.num_reset = 0
         self.num_agent = num_agent
         self.wandb = wandb
@@ -303,7 +305,7 @@ class SAC(OffPolicyAlgorithm):
             actors_losses.append(actor_losses)
             critics_losses.append(critic_losses)
 
-        if self.reset and self.num_timesteps % self.reset_frequency == 0: # and self.num_timesteps < 650000:
+        if self.reset and self.num_timesteps % self.reset_frequency == 0 and self.num_timesteps <= self.reset_stop_timestep:
 
             actor_num = int(self.num_reset % self.num_agent) # Determine which agent to reset.
 
