@@ -103,7 +103,7 @@ if args.wandb:
     wandb.init(project=f"CoLLAs_{args.env}", #CoLLAs_
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
-               job_type=f"{mode}_{args.replay_ratio}_{reset_freq}", 
+               job_type=f"{mode}_{args.replay_ratio}_{reset_freq}_stopReset_{args.reset_stop_timestep}_bufferSize_{args.buffer_size}", 
                # _every_step_reset
                # _buffer_{args.buffer_size}_lr_{args.learning_rate}
                # _dynamic_rr_{args.rr_change_timestep}_{args.rr_after_change}
