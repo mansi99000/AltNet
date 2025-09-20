@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.12.4
+  - python=3.9.21
   - pip
   - numpy=2.2.1
   - scipy=1.15.1
