@@ -34,3 +34,7 @@ checkpoints/
 *.pt
 *.h5
 *.hdf5
+
+# Ignore wandb logs and experiment tracking
+wandb/
+*.wandb
