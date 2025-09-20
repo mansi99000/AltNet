@@ -25,3 +25,12 @@ logs/
 *.out
 *.aux
 *.pdf
+
+# Ignore model checkpoints and large files
+checkpoints/
+*.zip
+*.pkl
+*.pth
+*.pt
+*.h5
+*.hdf5
