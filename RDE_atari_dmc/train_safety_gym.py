@@ -1,27 +1,43 @@
 from stable_baselines3 import SAC
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.callbacks import EvalCallback
-from stable_baselines3.common.env_util import make_dmc_env
-from continuous_control.utils import make_env as dmc_make_env
+from stable_baselines3.common.env_util import make_vec_env
 import argparse
 import wandb
 import csv
 import os
 import subprocess
+
+# Try to import safety-gym or safety-gymnasium, but handle gracefully if not installed
+SAFETY_GYM_AVAILABLE = False
+try:
+    import safety_gym
+    SAFETY_GYM_AVAILABLE = True
+except ImportError:
+    try:
+        import safety_gymnasium
+        SAFETY_GYM_AVAILABLE = True
+    except ImportError:
+        SAFETY_GYM_AVAILABLE = False
+        print("Warning: safety-gym or safety-gymnasium not installed.")
+        print("Install with: pip install safety-gym")
+        print("Or: pip install safety-gymnasium (recommended)")
+
 wandb.login()
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--env", default="hopper-hop")
+parser = argparse.ArgumentParser(description='Train SAC on Safety Gym environments')
+parser.add_argument("--env", default="Safexp-PointGoal1-v0", 
+                    help="Safety Gym environment name (e.g., Safexp-PointGoal1-v0, Safexp-CarGoal1-v0)")
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--total_timesteps", default=1e6, type=int)
-parser.add_argument("--eval_freq", default=1e4, type=int) #1e4
-parser.add_argument("--SR", action='store_true')
-parser.add_argument("--RDE", action='store_true')
-parser.add_argument("--PS", action='store_true')
+parser.add_argument("--eval_freq", default=1e4, type=int)
+parser.add_argument("--SR", action='store_true', help="Use Self-Reset mode")
+parser.add_argument("--RDE", action='store_true', help="Use Reset Deep Ensemble mode")
+parser.add_argument("--PS", action='store_true', help="Use Population-based Search mode")
 parser.add_argument("--reset_freq", default=4e5, type=float)
 parser.add_argument("--replay_ratio", default=1, type=int)
-parser.add_argument("--learning_rate", default=3e-4, type=float) # 0.0003
-parser.add_argument("--learning_starts", default=5000, type=int) #5000
+parser.add_argument("--learning_rate", default=3e-4, type=float)
+parser.add_argument("--learning_starts", default=5000, type=int)
 parser.add_argument("--action_select_coef", default=50, type=int)
 parser.add_argument("--wandb", action='store_true')
 parser.add_argument("--entity_name", type=str)
@@ -31,19 +47,22 @@ parser.add_argument("--rr_change_timestep", default=400000, type=int, help="Time
 parser.add_argument("--rr_after_change", default=8, type=int, help="Replay ratio after the change point")
 parser.add_argument("--buffer_size", default=1000000, type=int, help="Size of the replay buffer")
 parser.add_argument("--reset_stop_timestep", default=1e6, type=int, help="Timestep at which resets stop")
-parser.add_argument("--dynamic_resets", action='store_true', help="Enable dynamic reset frequency: 50k steps until 200k, then 100k steps")
+parser.add_argument("--dynamic_resets", action='store_true', help="Enable dynamic reset frequency")
+parser.add_argument("--use_cost", action='store_true', help="Use cost signal from Safety Gym (for WCSAC-like behavior)")
 
 args = parser.parse_args()
+
+if not SAFETY_GYM_AVAILABLE:
+    print("ERROR: safety-gym or safety-gymnasium is not installed.")
+    print("Install with: pip install safety-gym")
+    print("Or (recommended): pip install safety-gymnasium")
+    exit(1)
 
 set_random_seed(args.seed)
 
 policy_kwargs = dict()
 
-# Reduce network size by half (from [1024, 1024] to [512, 512])
-# policy_kwargs.update(net_arch=[512, 512]) # reduce size # Ablation
-
 branch = subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"]).strip().decode('utf-8')
-
 
 if args.RDE:
     mode = 'RDE'
@@ -73,19 +92,28 @@ if args.action_select_coef != 50:
 
 print(f'env:{args.env}, mode:{mode}')
 
-env = make_dmc_env(args.env, seed=args.seed)
-eval_env = dmc_make_env(args.env, args.seed+42)
-#eval_env = make_dmc_env(args.env, seed=args.seed+42) #faster eval and consistency in results? # M
+# Create Safety Gym environment
+# Safety Gym environments are standard gym environments, so we can use make_vec_env
+env = make_vec_env(args.env, n_envs=1, seed=args.seed)
+eval_env = make_vec_env(args.env, n_envs=1, seed=args.seed+42)
 
+# Check if environment has cost signal (Safety Gym feature)
+# Safety Gym environments return info dict with 'cost' key
+test_obs = env.reset()
+test_action = env.action_space.sample()
+test_obs, test_reward, test_done, test_info = env.step(test_action)
+has_cost_signal = 'cost' in test_info[0] if isinstance(test_info, list) else 'cost' in test_info
 
-# ensures that each agent is reset after the same number of updates as in the vanilla method
-reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio) # Rf = 400k; num_agent = 4 their rf = 100k; for SR, the rf = 400k
-#reset_freq = int(args.reset_freq)
+if has_cost_signal and args.use_cost:
+    print("Note: Environment provides cost signal. For WCSAC, you would need to modify the SAC algorithm.")
+    print("Current implementation uses standard SAC. Cost signal is available in info dict but not used in training.")
+
+# Reset the environment after testing
+env.reset()
+
+reset_freq = int((args.reset_freq/num_agent)/args.replay_ratio)
 
 log_path = f"./logs/{args.env}/{args.replay_ratio}/{mode}"
-
-# M
-# Ensure the directory exists
 os.makedirs(log_path, exist_ok=True)
 
 filename = f'{log_path}/result.csv'
@@ -101,19 +129,12 @@ eval_callback = EvalCallback(eval_env, best_model_save_path=log_path, log_path=l
 
 if args.wandb:
     policy_kwargs.update(wandb=args.wandb)
-    wandb.init(project=f"CoLLAs_{args.env}",
+    wandb.init(project=f"SafetyGym_{args.env}",
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
                job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{reset_freq}",
                dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb",
                reinit=True)
-
-               #_stopReset_{args.reset_stop_timestep}_bufferSize_{args.buffer_size}", 
-               # _every_step_reset
-               # _buffer_{args.buffer_size}_lr_{args.learning_rate}
-               # _dynamic_rr_{args.rr_change_timestep}_{args.rr_after_change}
-               # _reduced_size_512
-               # same_seed_reset
 
 model = SAC("MlpPolicy", env, verbose=0, policy_kwargs=policy_kwargs, reset=reset,
             reset_frequency=reset_freq, reset_stop_timestep=args.reset_stop_timestep,
@@ -128,6 +149,4 @@ model.learn(total_timesteps=args.total_timesteps, callback=eval_callback)
 env.close()
 eval_env.close()
 wandb.finish()
-
-
 

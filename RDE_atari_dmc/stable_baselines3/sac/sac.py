@@ -117,6 +117,7 @@ class SAC(OffPolicyAlgorithm):
             dynamic_rr: bool = False,
             rr_change_timestep: int = 400000,
             rr_after_change: int = 8,
+            dynamic_resets: bool = False,
     ):
 
         super().__init__(
@@ -162,9 +163,23 @@ class SAC(OffPolicyAlgorithm):
         self.dynamic_rr = dynamic_rr
         self.rr_change_timestep = rr_change_timestep
         self.rr_after_change = rr_after_change
+        self.dynamic_resets = dynamic_resets
 
         if _init_setup_model:
             self._setup_model()
+
+    def _get_current_reset_frequency(self) -> int:
+        """
+        Calculate the current reset frequency based on dynamic_resets setting.
+        Returns 50k steps until 200k timesteps, then 100k steps after that.
+        """
+        if not self.dynamic_resets:
+            return self.reset_frequency
+        
+        if self.num_timesteps <= 200000:
+            return 25000  # 50k steps until 200k
+        else:
+            return self.reset_frequency  # 100k steps after 200k
 
     def _setup_model(self) -> None:
         super()._setup_model()
@@ -305,7 +320,18 @@ class SAC(OffPolicyAlgorithm):
             actors_losses.append(actor_losses)
             critics_losses.append(critic_losses)
 
-        if self.reset and self.num_timesteps % self.reset_frequency == 0 and self.num_timesteps <= self.reset_stop_timestep:
+        current_reset_freq = self._get_current_reset_frequency()
+        
+        # Log reset frequency change (only once when it changes)
+        if self.dynamic_resets and not hasattr(self, '_last_reset_freq'):
+            self._last_reset_freq = current_reset_freq
+            self.logger.record("train/reset_frequency", current_reset_freq)
+        elif self.dynamic_resets and self._last_reset_freq != current_reset_freq:
+            self._last_reset_freq = current_reset_freq
+            self.logger.record("train/reset_frequency", current_reset_freq)
+            self.logger.record("train/reset_frequency_change_timestep", self.num_timesteps)
+        
+        if self.reset and self.num_timesteps % current_reset_freq == 0 and self.num_timesteps <= self.reset_stop_timestep:
 
             actor_num = int(self.num_reset % self.num_agent) # Determine which agent to reset.
 
@@ -398,3 +424,59 @@ class SAC(OffPolicyAlgorithm):
         else:
             saved_pytorch_variables = ["ent_coef_tensor"]
         return state_dicts, saved_pytorch_variables
+
+    def count_parameters(self) -> Dict[str, Any]:
+        """
+        Count the number of trainable parameters in the SAC model.
+        
+        Returns:
+            Dictionary containing parameter counts and breakdown
+        """
+        total_params = 0
+        agent_breakdown = []
+        
+        for i in range(self.num_agent):
+            actor_params = sum(p.numel() for p in self.actor[i].parameters() if p.requires_grad)
+            critic_params = sum(p.numel() for p in self.critic[i].parameters() if p.requires_grad)
+            ent_coef_params = 0
+            
+            if hasattr(self, 'log_ent_coef') and self.log_ent_coef[i] is not None:
+                ent_coef_params = sum(p.numel() for p in [self.log_ent_coef[i]] if p.requires_grad)
+            
+            agent_total = actor_params + critic_params + ent_coef_params
+            total_params += agent_total
+            
+            agent_breakdown.append({
+                'agent_id': i,
+                'actor_parameters': actor_params,
+                'critic_parameters': critic_params,
+                'entropy_coef_parameters': ent_coef_params,
+                'total_parameters': agent_total
+            })
+        
+        return {
+            'total_parameters': total_params,
+            'num_agents': self.num_agent,
+            'agent_breakdown': agent_breakdown,
+            'parameters_per_agent': total_params // self.num_agent if self.num_agent > 0 else 0
+        }
+    
+    def print_parameter_summary(self) -> None:
+        """Print a summary of model parameters."""
+        analysis = self.count_parameters()
+        
+        print("=" * 60)
+        print("SAC PARAMETER SUMMARY")
+        print("=" * 60)
+        print(f"Total Parameters: {analysis['total_parameters']:,}")
+        print(f"Number of Agents: {analysis['num_agents']}")
+        print(f"Parameters per Agent: {analysis['parameters_per_agent']:,}")
+        
+        print(f"\nPer-Agent Breakdown:")
+        for agent in analysis['agent_breakdown']:
+            print(f"  Agent {agent['agent_id']}: {agent['total_parameters']:,} parameters")
+            print(f"    - Actor: {agent['actor_parameters']:,}")
+            print(f"    - Critic: {agent['critic_parameters']:,}")
+            print(f"    - Entropy Coef: {agent['entropy_coef_parameters']:,}")
+        
+        print("=" * 60)
