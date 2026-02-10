@@ -354,11 +354,24 @@ class SACPolicy(BasePolicy):
             -> Tuple[th.Tensor, Union[int, float]]:
         if self.num_agent == 1:
             return self.actor0(observation, deterministic), 0.5
-        if self.num_agent == 2: # implies ps mode for now
-            actor = getattr(self, f"actor{(self.num_reset + self.num_agent) % self.num_agent}") # will give the alst reset actor?
-            # print("I used actor", (self.num_reset + self.num_agent) % self.num_agent)
-            # pdb.set_trace()
-            return actor(observation, deterministic), 0.5 # I don't think this number matters
+
+        if self.num_agent == 2:
+            # AltNet action selection (Maheshwari et al., 2025):
+            # Always select the TRAINED (non-reset) network for action selection.
+            # This is the core of AltNet: the active network is the one that has been
+            # training off-policy while the other was acting. After a reset, the freshly
+            # reset network becomes passive (trains off-policy), and the previously passive
+            # (now trained) network becomes active. This guarantees that a recently reset
+            # network never acts in the environment, preventing post-reset performance drops.
+            #
+            # The index (num_reset + num_agent) % num_agent always points to the non-reset agent:
+            #   - Before any reset (num_reset=0): selects actor0
+            #   - After actor0 is reset (num_reset=1): selects actor1 (trained, non-reset)
+            #   - After actor1 is reset (num_reset=2): selects actor0 (trained, non-reset)
+            active_agent_idx = (self.num_reset + self.num_agent) % self.num_agent
+            actor = getattr(self, f"actor{active_agent_idx}")
+            return actor(observation, deterministic), 0.5
+
         else:
             if self.num_reset > 0:
                 actions = []

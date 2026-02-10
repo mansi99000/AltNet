@@ -331,21 +331,34 @@ class SAC(OffPolicyAlgorithm):
             self.logger.record("train/reset_frequency", current_reset_freq)
             self.logger.record("train/reset_frequency_change_timestep", self.num_timesteps)
         
+        # =============================================================================
+        # AltNet Periodic Reset Mechanism (Maheshwari et al., 2025)
+        #
+        # In AltNet (num_agent=2), two networks alternate roles:
+        #   - The ACTIVE network interacts with the environment (selected in _predict).
+        #   - The PASSIVE network trains off-policy from the shared replay buffer.
+        #   - At every ResetFreq steps, the currently active network is fully reset
+        #     (re-initialized) and becomes passive, while the trained passive network
+        #     becomes active. This ensures a freshly reset network never acts in the
+        #     environment, preventing post-reset performance drops.
+        #
+        # Reset frequency follows the normalization from Kim et al. (2024):
+        #   ResetFreq (env steps) = U / (RR * N)
+        #   where U = reset interval in gradient updates, RR = replay ratio, N = num agents.
+        #
+        # For RDE (num_agent > 2), agents cycle through resets round-robin.
+        # =============================================================================
         if self.reset and self.num_timesteps % current_reset_freq == 0 and self.num_timesteps <= self.reset_stop_timestep:
 
-            actor_num = int(self.num_reset % self.num_agent) # Determine which agent to reset.
+            # Determine which agent to reset (cycles through agents round-robin)
+            actor_num = int(self.num_reset % self.num_agent)
 
-            # Set the random seed to ensure reproducible weight initialization
-            # comment this out if you don't want to reset the weights using the same seed
-            # if self.seed is not None:
-            #     th.manual_seed(self.seed)
-            #     np.random.seed(self.seed)
-
+            # Full network reset: re-initialize all layers of the actor
             self.policy.init_weights(self.actor[actor_num].latent_pi[0])
             self.policy.init_weights(self.actor[actor_num].latent_pi[2])
-            self.policy.init_weights(self.actor[actor_num].mu) # last layer
+            self.policy.init_weights(self.actor[actor_num].mu)
             
-            # critic 1
+            # Full network reset: re-initialize all layers of critic Q-network 1
             self.policy.init_weights(self.critic[actor_num].qf0[0])
             self.policy.init_weights(self.critic[actor_num].qf0[2])
             self.policy.init_weights(self.critic[actor_num].qf0[4])
@@ -354,7 +367,7 @@ class SAC(OffPolicyAlgorithm):
             self.policy.init_weights(self.critic_target[actor_num].qf0[2])
             self.policy.init_weights(self.critic_target[actor_num].qf0[4])
             
-            # critic 2
+            # Full network reset: re-initialize all layers of critic Q-network 2
             self.policy.init_weights(self.critic[actor_num].qf1[0])
             self.policy.init_weights(self.critic[actor_num].qf1[2])
             self.policy.init_weights(self.critic[actor_num].qf1[4])
@@ -363,16 +376,18 @@ class SAC(OffPolicyAlgorithm):
             self.policy.init_weights(self.critic_target[actor_num].qf1[2])
             self.policy.init_weights(self.critic_target[actor_num].qf1[4])
 
+            # Reset entropy coefficient and its optimizer for the reset agent
             self.log_ent_coef[actor_num] = th.log(th.ones(1, device=self.device)).requires_grad_(True)
             self.ent_coef_optimizer[actor_num] = th.optim.Adam([self.log_ent_coef[actor_num]], lr=self.lr_schedule(1))
 
+            # Reset optimizers to clear accumulated momentum/state from prior training
             self.actor[actor_num].optimizer = th.optim.Adam(self.actor[actor_num].parameters(), lr=self.lr_schedule(1))
             self.critic[actor_num].optimizer = th.optim.Adam(self.critic[actor_num].parameters(),
                                                              lr=self.lr_schedule(1))
 
+            # Track total resets (used by policy._predict to select the active agent)
             self.num_reset += 1
             self.policy.num_reset += 1
-            # What is the difference between num_reset and policy_num_reset
 
         self._n_updates += gradient_steps
 
@@ -388,11 +403,8 @@ class SAC(OffPolicyAlgorithm):
             self.logger.record(f"train/critic_loss_{i + 1}", np.mean(critics_losses, 0)[i])
             self.logger.record(f"train/ent_coef_loss_{i + 1}", np.mean(ent_coefs_losses, 0)[i])
 
-        # if self.wandb:
-        #     for i in range(self.num_agent):
-        #         wandb.log({f"actor_loss{i + 1}": float(np.mean(actors_losses, 0)[i])}, step=self.num_timesteps)
-        #         wandb.log({f"critic_loss{i + 1}": float(np.mean(critics_losses, 0)[i])}, step=self.num_timesteps)
-        #         wandb.log({f"ent_coef_{i + 1}": float(np.mean(ent_coefss, 0)[i])}, step=self.num_timesteps)
+        # Per-agent metrics are logged via self.logger above (used by SB3's built-in logging
+        # and EvalCallback with wandb integration).
 
     def learn(
             self: SelfSAC,

@@ -38,3 +38,14 @@ checkpoints/
 # Ignore wandb logs and experiment tracking
 wandb/
 *.wandb
+
+# Ignore scratch/utility scripts (not part of the main codebase)
+tatus
+RDE_atari_dmc/stable_baselines3/sac/parameter_counter.py
+RDE_atari_dmc/stable_baselines3/sac/parameter_matching.py
+RDE_atari_dmc/stable_baselines3/sac/quick_check.py
+RDE_atari_dmc/stable_baselines3/sac/quick_param_count.py
+RDE_atari_dmc/stable_baselines3/sac/simple_param_count.py
+RDE_atari_dmc/stable_baselines3/sac/example_usage.py
+RDE_atari_dmc/stable_baselines3/sac/METRICS_TRACKING.md
+RDE_atari_dmc/analyze_profile.py
