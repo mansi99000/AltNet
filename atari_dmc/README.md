@@ -42,7 +42,7 @@ Neural networks in reinforcement learning progressively lose their ability to le
 This codebase builds on the implementation released by [Kim et al. (2024)](https://openreview.net/forum?id=bTidcHIK2t) as supplementary material for their NeurIPS 2023 paper *"Sample-Efficient and Safe Deep Reinforcement Learning via Reset Deep Ensemble Agents"* (RDE). Their code extends [stable-baselines3](https://github.com/DLR-RM/stable-baselines3) (v1.7.0) with multi-agent ensemble and reset support, and uses DeepMind Control Suite wrappers from [rl_with_resets](https://github.com/evgenii-nikishin/rl_with_resets) (Nikishin et al., 2022). We modified their codebase to implement AltNet; our specific changes are listed in the table below.
 
 ```
-RDE_atari_dmc/
+atari_dmc/
 ├── train_dmc.py                    # Training script for DMC environments (SAC-based)
 ├── train_atari.py                  # Training script for Atari 100k (DQN-based)
 ├── train_safety_gym.py             # Training script for Safety Gym environments
