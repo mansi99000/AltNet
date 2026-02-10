@@ -1,5 +1,7 @@
 # AltNet: Addressing the Plasticity-Stability Dilemma in Reinforcement Learning
 
+**Accepted at [AAMAS 2026](https://www.aamas2026-conference.auckland.ac.nz/)** (25th International Conference on Autonomous Agents and Multi-Agent Systems)
+
 **Paper:** [arXiv:2512.01034](https://arxiv.org/abs/2512.01034)  
 **Authors:** Mansi Maheshwari, John C. Raisbeck, Bruno Castro da Silva  
 **Affiliation:** University of Massachusetts Amherst
@@ -37,7 +39,7 @@ Neural networks in reinforcement learning progressively lose their ability to le
 
 ## Codebase Structure
 
-This codebase extends [stable-baselines3](https://github.com/DLR-RM/stable-baselines3) (v1.7.0) with multi-agent reset support. The DeepMind Control Suite wrapper is based on [rl_with_resets](https://github.com/evgenii-nikishin/rl_with_resets).
+This codebase builds on the implementation released by [Kim et al. (2024)](https://openreview.net/forum?id=bTidcHIK2t) as supplementary material for their NeurIPS 2023 paper *"Sample-Efficient and Safe Deep Reinforcement Learning via Reset Deep Ensemble Agents"* (RDE). Their code extends [stable-baselines3](https://github.com/DLR-RM/stable-baselines3) (v1.7.0) with multi-agent ensemble and reset support, and uses DeepMind Control Suite wrappers from [rl_with_resets](https://github.com/evgenii-nikishin/rl_with_resets) (Nikishin et al., 2022). We modified their codebase to implement AltNet; our specific changes are listed in the table below.
 
 ```
 RDE_atari_dmc/
@@ -132,11 +134,11 @@ python train_atari.py --env AlienNoFrameskip-v4 --RDE --reset_freq 2e5 --replay_
 ## Citation
 
 ```bibtex
-@article{maheshwari2025altnet,
+@inproceedings{maheshwari2026altnet,
   title={Addressing the Plasticity-Stability Dilemma in Reinforcement Learning},
   author={Maheshwari, Mansi and Raisbeck, John C. and Castro da Silva, Bruno},
-  journal={arXiv preprint arXiv:2512.01034},
-  year={2025}
+  booktitle={Proceedings of the 25th International Conference on Autonomous Agents and Multi-Agent Systems (AAMAS)},
+  year={2026}
 }
 ```
 
