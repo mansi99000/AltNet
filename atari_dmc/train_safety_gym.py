@@ -133,7 +133,7 @@ if args.wandb:
                name=f"{args.job_id}_{mode}_rr_{args.replay_ratio}_seed_{args.seed}_num_{num_agent}_{branch}_{reset_freq}",
                group=f"{args.env}",
                job_type=f"{mode}_{num_agent}agents_{args.replay_ratio}_{reset_freq}",
-               dir="/work/pi_bsilva_umass_edu/mmaheshwari_umass_edu/wandb",
+               dir=os.environ.get("WANDB_DIR", "./wandb"),
                reinit=True)
 
 model = SAC("MlpPolicy", env, verbose=0, policy_kwargs=policy_kwargs, reset=reset,
