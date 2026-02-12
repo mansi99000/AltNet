@@ -1,6 +1,6 @@
 # AltNet: Addressing the Plasticity-Stability Dilemma in Reinforcement Learning
 
-**Accepted at [AAMAS 2026](https://www.aamas2026-conference.auckland.ac.nz/)** (25th International Conference on Autonomous Agents and Multi-Agent Systems)
+**Accepted at [AAMAS 2026](https://www.aamas2026-conference.auckland.ac.nz/)** 
 
 **Paper:** [arXiv:2512.01034](https://arxiv.org/abs/2512.01034)  
 **Authors:** Mansi Maheshwari, John C. Raisbeck, Bruno Castro da Silva  
@@ -45,17 +45,13 @@ This codebase builds on the implementation released by [Kim et al. (2024)](https
 atari_dmc/
 ├── train_dmc.py                    # Training script for DMC environments (SAC-based)
 ├── train_atari.py                  # Training script for Atari 100k (DQN-based)
-├── train_safety_gym.py             # Training script for Safety Gym environments
 ├── continuous_control/             # DMC environment wrappers
 │   ├── utils.py                    # Environment factory
 │   └── wrappers/                   # Gym-compatible DMC wrappers
 ├── stable_baselines3/              # Modified SB3 with multi-agent reset support
 │   ├── sac/
-│   │   ├── sac.py                  # SAC with AltNet/RDE reset mechanism
+│   │   ├── sac.py                  # SAC with AltNet reset mechanism
 │   │   └── policies.py            # Multi-agent SAC policies with AltNet action selection
-│   ├── dqn/
-│   │   ├── dqn.py                  # DQN with multi-agent reset mechanism
-│   │   └── policies.py            # Multi-agent DQN policies
 │   └── common/                     # Shared SB3 utilities (buffers, callbacks, etc.)
 ├── Atari100k_results/              # Baseline result CSVs for Atari 100k benchmark
 ├── requirements.txt
@@ -64,17 +60,13 @@ atari_dmc/
 
 ### Key Modified Files (our contributions)
 
-The following files contain the core AltNet implementation, built on top of the original stable-baselines3 and RDE codebases:
+The following files contain the core AltNet implementation, built on top of the original stable-baselines3 codebases:
 
 | File | What we modified |
 |------|-----------------|
 | `stable_baselines3/sac/policies.py` | **AltNet action selection** (`_predict` method): always selects the trained (non-reset) network for environment interaction. Also supports RDE's Q-value weighted ensemble selection. |
 | `stable_baselines3/sac/sac.py` | **Periodic reset mechanism** (`train` method): full network resets (actor, critic, entropy coef, optimizers) with round-robin agent cycling. Added dynamic replay ratio and dynamic reset frequency scheduling. |
-| `stable_baselines3/dqn/dqn.py` | DQN variant of the reset mechanism with configurable layer reset scope. |
-| `stable_baselines3/dqn/policies.py` | Multi-agent DQN policy with ensemble action selection. |
 | `train_dmc.py` | DMC training script with mode selection (AltNet/SR/RDE/SAC). |
-| `train_atari.py` | Atari training script with mode selection. |
-| `train_safety_gym.py` | Safety Gym training script with mode selection. |
 
 ## Setup
 
